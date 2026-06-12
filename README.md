@@ -1,22 +1,12 @@
 # Cloudflare Bypass Tool 2026
 
-基于 SeleniumBase UC Mode 的 Cloudflare Turnstile 验证绕过工具
+基于多技术方案的 Cloudflare Turnstile 验证绕过工具集
 
-A Cloudflare Turnstile bypass tool based on SeleniumBase UC Mode
+A multi-technique Cloudflare Turnstile bypass toolkit
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Mac%20%7C%20Windows%20%7C%20Linux-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-## 推荐代理 / Recommended Proxy
-
-[![Swiftproxy](swiftproxy-banner.png)](https://www.swiftproxy.net/?ref=cloudflarebypass)
-
-**Swiftproxy** —— 全球住宅代理服务平台，拥有 **8000万+** 高质量住宅 IP，覆盖 **190+** 国家和地区。支持 **HTTP/HTTPS/SOCKS5**、动态轮换与会话保持，流量不过期，并提供免费测试。凭借真实住宅 IP 和稳定连接，可有效提升数据采集、自动化访问、AI 工作流及大规模网络任务的成功率。
-
-链接：<https://www.swiftproxy.net/?ref=cloudflarebypass>
-
----
 
 ## 免责声明 / Disclaimer
 
@@ -24,36 +14,56 @@ A Cloudflare Turnstile bypass tool based on SeleniumBase UC Mode
 
 This tool is for educational purposes only. Please comply with applicable laws and website terms of service.
 
----
+## 方案对比与可行性分析 / Comparison & Viability
+
+本仓库提供 **4 种不同技术方案**，针对 Cloudflare Turnstile 的可行性和适用场景如下：
+
+| # | 文件 | 方案 | 原理 | Turnstile 可行 | 适用场景 |
+|:---:|:---|:---|:---|:---:|:---|
+| 1 | `bypass.py` | SeleniumBase UC Mode | OS 级鼠标模拟 + Chrome | ✅ 最高 | **主力推荐**，Turnstile Managed/Interactive |
+| 2 | `simple_bypass.py` | SeleniumBase + 并行 | 多浏览器并发 + 代理轮换 | ✅ 高 | 批量采集、大规模任务 |
+| 3 | `bypass_nodriver.py` | CDP 直连 | 无 WebDriver，CDP 协议直控 | ✅ 高 | SeleniumBase 替代方案，`cf_verify()` 自动处理 |
+| 4 | `bypass_curl_cffi.py` | TLS 指纹仿冒 | HTTP 层 JA3/JA4 指纹修改 | ❌ 不可用 | **仅限旧版 JS Challenge**，无法用于 Turnstile |
+
+### curl_cffi 方案的重要限制
+
+`bypass_curl_cffi.py` **无法绕过 Cloudflare Turnstile**（含 Managed / Non-Interactive / Invisible 三种模式），原因如下：
+
+1. **无 JavaScript 执行环境** — Turnstile 必须在浏览器中运行 JS 完成 PoW 计算和 API 探测
+2. **无 DOM / Web API** — Turnstile 检查 `navigator`、`webgl`、`canvas` 等浏览器指纹
+3. **无法交互** — Managed 模式需要用户点击复选框，纯 HTTP 客户端无法完成
+4. TLS 指纹仅为 Turnstile 检测的**众多信号之一**，不是决定性因素
+
+该方案仅适用于**旧版 Cloudflare "Under Attack" JS Challenge** 或低防护站点。如需绕过 Turnstile，请使用方案 1、2 或 3。
 
 ## 功能特点 / Features
 
 | 功能 | 说明 |
 |:---|:---|
 | SeleniumBase UC Mode | 操作系统级鼠标模拟，绕过率最高 |
+| nodriver CDP 直连 | 无 WebDriver 依赖，`cf_verify()` 自动点击 |
 | 单浏览器模式 | 简单可靠，资源占用低 |
 | 并行模式 | 多浏览器同时运行，提高效率 |
 | 代理轮换 | 支持从文件批量加载代理 |
-| HTTPS隧道检测 | 自动验证代理是否支持HTTPS |
+| HTTPS 隧道检测 | 自动验证代理是否支持 HTTPS |
 | 跨平台 | Mac / Windows / Linux |
-| Cookie保存 | JSON + Netscape 双格式 |
-
----
+| Cookie 保存 | JSON + Netscape 双格式 |
 
 ## 快速开始 / Quick Start
 
 ```bash
-# 安装
-pip install seleniumbase
+# 安装依赖
+pip install -r requirements.txt
 
-# 基础用法（推荐）
+# 方案1: 基础用法（推荐，绕过率最高）
 python bypass.py https://example.com
 
-# 使用代理
+# 方案1: 使用代理
 python bypass.py https://example.com -p http://127.0.0.1:7890
-```
 
----
+# 方案3: nodriver CDP 直连
+python bypass_nodriver.py https://example.com
+```
 
 ## 安装部署 / Installation
 
@@ -86,24 +96,11 @@ sudo apt-get install -f -y
 pip install seleniumbase pyvirtualdisplay
 ```
 
----
-
 ## 使用方法 / Usage
 
-本工具提供 **4 种不同技术方案的绕过策略**，根据场景选择：
+### 1. 简单模式 (bypass.py) —— 主力推荐，绕过率最高
 
-| 文件 | 方案 | 原理 | 场景 |
-|:---|:---|:---|:---|
-| `bypass.py` | SeleniumBase UC Mode | 操作系统级鼠标模拟 + Chrome | 综合推荐，绕过率最高 |
-| `simple_bypass.py` | SeleniumBase + 并行 | 多浏览器并行 + 代理轮换 | 批量采集、分布式任务 |
-| `bypass_nodriver.py` | CDP 直连 | 无 WebDriver，直接 CDP 通信 | SeleniumBase替代，内置cf_verify() |
-| `bypass_curl_cffi.py` | TLS 指纹仿冒 | HTTP层JA3/JA4指纹修改 | API绕过、无需浏览器、超轻量 |
-
----
-
-### 1. 简单模式 (bypass.py) - 推荐
-
-单浏览器，简单可靠：
+单浏览器，SeleniumBase UC Mode，最简单可靠：
 
 ```bash
 # 直连
@@ -125,11 +122,9 @@ python bypass.py https://example.com -t 60
 | `-t, --timeout` | 超时(秒) | 60 |
 | `--no-save` | 不保存Cookie | 否 |
 
----
+### 2. 完整模式 (simple_bypass.py) —— 并行 + 代理轮换
 
-### 2. 完整模式 (simple_bypass.py)
-
-支持并行和代理轮换：
+支持并行浏览器和代理批量轮换：
 
 ```bash
 # 直连模式
@@ -163,8 +158,6 @@ python simple_bypass.py https://example.com -P -c -b 3 -t 15 -n 30 -f proxy.txt
 | `-c, --check-proxy` | 预检测代理存活 | 否 |
 | `--no-save` | 不保存Cookie | 否 |
 
----
-
 ### 3. Python API
 
 ```python
@@ -192,11 +185,9 @@ result = bypass_parallel(
 )
 ```
 
----
+### 4. nodriver 方案 (bypass_nodriver.py) —— CDP 直连
 
-### 4. nodriver 方案 (bypass_nodriver.py) — SeleniumBase 替代
-
-基于 CDP 协议直连 Chrome，无需 WebDriver。nodriver 是 undetected-chromedriver 的官方继任者。
+基于 CDP 协议直连 Chrome，无需 WebDriver。nodriver 是 undetected-chromedriver 的官方继任者。支持 Turnstile。
 
 ```bash
 # 安装
@@ -208,17 +199,17 @@ python bypass_nodriver.py https://example.com
 # 使用代理
 python bypass_nodriver.py https://example.com -p http://127.0.0.1:7890
 
-# 启用无头模式 (不推荐)
+# 启用无头模式 (不推荐，Cloudflare可检测)
 python bypass_nodriver.py https://example.com --headless
 ```
 
-**特点：** 不依赖 Selenium/WebDriver，内置 `cf_verify()` 自动处理验证点击。
+**特点：** 不依赖 Selenium/WebDriver，内置 `cf_verify()` 通过 OpenCV 图像识别自动定位并点击验证复选框。异步架构，性能更优。
 
----
+### 5. TLS 指纹方案 (bypass_curl_cffi.py) —— 超轻量（非 Turnstile）
 
-### 5. TLS 指纹方案 (bypass_curl_cffi.py) — 超轻量
+> ⚠️ **注意：本方案无法绕过 Cloudflare Turnstile。** 仅适用于旧版 "Under Attack" JS Challenge 或低防护站点。如需绕过 Turnstile 请使用方案 1、2 或 3。
 
-在 HTTP/TLS 层仿冒真实浏览器的 JA3/JA4 指纹，不需要启动浏览器。
+在 HTTP/TLS 层仿冒真实浏览器的 JA3/JA4 指纹，无需启动浏览器。
 
 ```bash
 # 安装
@@ -232,14 +223,9 @@ python bypass_curl_cffi.py https://example.com -p http://127.0.0.1:7890
 
 # 切换指纹类型 (chrome120/chrome124/chrome131/firefox121/safari17_0/edge101)
 python bypass_curl_cffi.py https://example.com -f firefox121
-
-# 增加重试次数
-python bypass_curl_cffi.py https://example.com -n 5
 ```
 
-**特点：** 极速、零浏览器依赖、适合服务器环境和 API 调用场景。但对于需要交互式验证的页面可能不适用。
-
----
+**特点：** 极速、零浏览器依赖、资源占用极低。适用于简单防护场景，不适合 Turnstile。
 
 ## 代理文件格式 / Proxy Format
 
@@ -252,8 +238,6 @@ http://127.0.0.1:7890
 socks5://127.0.0.1:1080
 http://user:pass@host:port
 ```
-
----
 
 ## 输出文件 / Output
 
@@ -276,55 +260,86 @@ Cookie保存到 `output/cookies/` 目录：
 }
 ```
 
----
-
 ## 项目结构 / Structure
 
 ```
 cloudflare-bypass-2026/
-├── bypass.py              # 方案1: SeleniumBase 单浏览器（推荐）
-├── simple_bypass.py       # 方案2: SeleniumBase 并行+代理轮换
-├── bypass_nodriver.py     # 方案3: nodriver CDP直连
-├── bypass_curl_cffi.py    # 方案4: curl_cffi TLS指纹仿冒
-├── bypass_seleniumbase.py # 详细版（类封装实现）
-├── install_linux.sh       # Linux安装脚本
-├── requirements.txt       # Python依赖
+├── bypass.py              # 方案1: SeleniumBase 单浏览器（主力推荐）
+├── simple_bypass.py       # 方案2: SeleniumBase 并行 + 代理轮换
+├── bypass_nodriver.py     # 方案3: nodriver CDP 直连
+├── bypass_curl_cffi.py    # 方案4: curl_cffi TLS 指纹（非Turnstile）
+├── bypass_seleniumbase.py # 详细版（类封装，含鼠标轨迹模拟）
+├── install_linux.sh       # Linux 一键安装脚本
+├── requirements.txt       # Python 依赖清单
 ├── proxy.txt              # 代理列表
-├── output/                # Cookie输出目录
+├── swiftproxy-banner.png  # 推荐代理广告图
+├── output/                # Cookie 输出目录
 └── README.md
 ```
 
----
-
 ## 常见问题 / FAQ
 
+**Q: 应该用哪个方案?**
+> 推荐优先级：bypass.py (方案1) > bypass_nodriver.py (方案3) > simple_bypass.py (方案2)。方案4 (curl_cffi) 不适用于 Turnstile，仅用于旧版简单验证。
+
 **Q: 为什么不用无头模式?**
-> Cloudflare可检测无头浏览器，建议保持可视化模式以获得最高成功率。
+> Cloudflare 可检测无头浏览器，建议保持可视化模式以获得最高成功率。
 
-**Q: cf_clearance有效期?**
-> 通常30分钟到数小时，建议过期前重新获取。
+**Q: cf_clearance 有效期?**
+> 通常 30 分钟到数小时，与 Turnstile 的 Challenge Passage 设置有关。建议过期前重新获取。
 
-**Q: Linux报错 "X11 display failed"?**
-> 运行 `sudo bash install_linux.sh` 安装Xvfb等依赖。
+**Q: Linux 报错 "X11 display failed"?**
+> 运行 `sudo bash install_linux.sh` 安装 Xvfb 等依赖。
 
 **Q: 代理不工作?**
-> 大部分公共代理不支持HTTPS隧道。建议使用直连模式或购买高质量住宅代理。
+> 大部分公共代理不支持 HTTPS 隧道。建议使用直连模式或购买高质量住宅代理（如 [Swiftproxy](https://www.swiftproxy.net/?ref=cloudflarebypass)）。
 
-**Q: Chrome启动多个进程?**
-> 这是Chrome正常架构（主进程+渲染进程+GPU进程），非代码问题。
+**Q: curl_cffi 方案为什么不能用于 Turnstile?**
+> Turnstile 需要在浏览器环境执行 JavaScript 并进行 Web API 探测（navigator、webgl、canvas 等），纯 HTTP 客户端无法完成这些操作。详见本文「方案对比」章节。
 
----
+**Q: Chrome 启动多个进程?**
+> 这是 Chrome 正常架构（主进程 + 渲染进程 + GPU 进程），非代码问题。
 
 ## 技术参考 / References
 
 - [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)
+- [Cloudflare Challenges](https://developers.cloudflare.com/cloudflare-challenges/)
 - [SeleniumBase UC Mode](https://seleniumbase.com/)
+- [nodriver - undetected-chromedriver 继任者](https://github.com/ultrafunkamsterdam/nodriver)
+- [curl_cffi - TLS 指纹仿冒](https://github.com/lexiforest/curl_cffi)
+
+---
+
+## 推荐代理 / Sponsored Proxy
+
+<a href="https://www.swiftproxy.net/?ref=cloudflarebypass">
+  <img src="swiftproxy-banner.png" alt="Swiftproxy - 全球住宅代理" width="100%" />
+</a>
+
+### Swiftproxy — 全球住宅代理服务平台
+
+| 特性 | 详情 |
+|:---|:---|
+| 代理池规模 | **8000 万+** 高质量住宅 IP |
+| 覆盖范围 | **190+** 国家和地区 |
+| 支持协议 | HTTP / HTTPS / SOCKS5 |
+| 轮换方式 | 动态轮换 + 会话保持 |
+| 流量有效期 | 永不过期 |
+| 免费测试 | 提供 |
+
+真实住宅 IP 保障稳定连接，有效提升数据采集、自动化访问、AI 工作流及大规模网络任务的成功率。
+
+<p align="center">
+  <a href="https://www.swiftproxy.net/?ref=cloudflarebypass">
+    <b>👉 立即获取免费测试</b>
+  </a>
+</p>
 
 ---
 
 ## License
 
-MIT License - 2026
+MIT License
 
 ---
 

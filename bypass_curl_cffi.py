@@ -1,20 +1,28 @@
 # ============================================================
-# Cloudflare Turnstile 绕过工具 - curl_cffi 方案
+# Cloudflare 绕过工具 - curl_cffi 方案 (仅限简单场景)
 # 基于 TLS/JA3 指纹仿冒，HTTP协议层绕过，无需浏览器
 # 支持 Mac / Windows / Linux
 # ============================================================
-# 方案说明:
-#   curl_cffi 是 curl-impersonate 的 Python 绑定
-#   通过修改 TLS 握手指纹 (JA3/JA4) 和 HTTP/2 指纹
-#   让请求看起来像来自真实浏览器 (Chrome/Firefox/Safari)
-#   Cloudflare 在 TLS 层面无法区分自动化请求
-#   适用于 API 级别的验证绕过，无需启动浏览器
-#   速度极快，资源占用极低，可在服务器环境运行
 # 
-# 注意: 
-#   此方法适用于 Cloudflare JS Challenge 和部分 Turnstile
-#   但对于需要交互式验证的 Managed Challenge 可能不适用
-#   建议与浏览器方案配合使用，分层尝试
+# ⚠️ 重要限制说明 ⚠️
+# 
+# 本方案仅能处理 TLS/JA3 指纹层面的检测，存在以下硬性限制:
+#   1. 无法执行 JavaScript — Turnstile 必须依赖浏览器 JS 环境
+#   2. 无法运行 Web API 探测 — Turnstile 会检查 navigator/webgl 等
+#   3. 无法完成 PoW 计算 — Turnstile 后台运行 proof-of-work
+#   4. 无法处理交互式验证 — Managed/Interactive 模式需要点击复选框
+# 
+# 适用场景:
+#   - 旧版 Cloudflare "Under Attack" JS Challenge
+#   - 简单的非交互式验证页面
+#   - 低防护等级的站点
+#
+# 不适用场景:
+#   - Cloudflare Turnstile (Managed / Non-Interactive / Invisible)
+#   - 需要浏览器交互的任何验证
+#   - 高防护等级的站点
+#
+# 建议: 如需绕过 Turnstile，请使用 bypass.py 或 bypass_nodriver.py
 # ============================================================
 
 import sys
